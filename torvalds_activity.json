@@ -1,0 +1,1052 @@
+[ {
+  "repository" : {
+    "name" : "1590A",
+    "description" : "Random odd guitar pedal design in kicad",
+    "fork" : false,
+    "language" : "OpenSCAD",
+    "full_name" : "torvalds/1590A",
+    "html_url" : "https://github.com/torvalds/1590A"
+  },
+  "recentCommits" : [ {
+    "sha" : "f5717f48f6fcf7092f570a550e214178bfe3bfa5",
+    "commit" : {
+      "message" : "Try LDO for positive voltage rail cleaning\n\nAs mentioned, I don't think I'll actually build this, because it seems\npointlessly complicated.  But I did the basic design and layout for it\njust in case.\n\nI think I'll go back to the single-rail design and keep the MOSFET\nswitching.\n\nI also think I need to come up with a new project.  I'm kind of running\nout of ideas of small projects to do that I can build and test.  I like\nthe switching circuit, but I'm losing interest in the effects board side\nsince I still can't actually play guitar.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T01:48:11Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/f5717f48f6fcf7092f570a550e214178bfe3bfa5"
+  }, {
+    "sha" : "3ff47dcfd40d67184148e9249fa4d7128b0b92bc",
+    "commit" : {
+      "message" : "Add AP2202-ADJ LDO symbol to my parts library\n\nI don't think I'll actually end up using this, because the negative\nvoltage generation just ends up being more pain than it is worth, but I\nthink I'll do one last test-run of things with a nice linear voltage\nregulator to make that positive rail more solid.\n\nI've been here before: I'd like to have a dual rail voltage for so many\nreasons, but the end result is just rather noisy.  Not just on the\nactual negative rail, but on the incoming positive rail too.  The dual\ninductor thing does seem less noisy than most, but it still requires\njust more work.\n\nEven the traditional charge pump wasn't great.\n\nIt's all fixable, but the fixes tend to end up making things more\ncomplicated than simply rebiasing the signal to the middle of the\npositive rail.\n\nThis is made much worse by the whole \"modular base and effects board\"\napproach I have taken: it means that the base board then always ends up\nbeing overly complicated, when the effect board may not need a negative\nrail at all, or may not need very much power at all.\n\nIn fact, it might not need the signal being re-bias back to ground\nbecause in many cases the effects board will rebias the signal anyway.\n\nSo this is all self-inflicted pain.  But I'll continue doing this simply\nbecause I'm trying things out, and certainly learning things in the\nprocess.\n\nI do note that my plain base board is very simple and works really quite\nwell, but does rely on clean power input.  So it wants a good low-noise\nguitar pedal power supply.  Which is admittedly not that hard to find,\nand kind of expected for most guitar pedals.  I then mess things up with\nmy own power supply games.\n\nBut here we are: add a LDO to allow cleaning up the mess that generating\nthat negative rail results in.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-28T22:48:18Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/3ff47dcfd40d67184148e9249fa4d7128b0b92bc"
+  }, {
+    "sha" : "245f7595e13c3b63c0932ca9b03752df6ab3114d",
+    "commit" : {
+      "message" : "Update the buffered base board\n\nThe JFET switching worked fine, but since this all started as an\nexercise in using MOSFETs, let's just go all in on that, and use the\nMOSFETs for switching the signal too.\n\nDue to the body diode, you need two MOSFETs in series for the signal\nswitching, so it's four MOSFETs instead of two JFETs, but despite that\nthe end result is actually simpler.  And those dual MOSFET things are\ncommon and dirt cheap, unlike the special matched JFET package.\n\nSince I can just continue to use the dual complementary MOSFETs, I can\nuse PMOS for one signal and NMOS for the other, and share all the gate\ncircuit.  Plus no need for a diode to protect the gate current messing\nwith the signal.\n\nAlso update the resistor value in the switching circuit and make the\ntime constant be 100ms.  That seems to make it more reliable in testing,\nalthough I'm not convinced my testing with the original value was all\nthat great.  The soft-switch circuit does seem to work, though.\n\nAlso, since the LED pin on the board connectors has never been used,\nlet's just re-purpose that as a negative voltage pin for the effect\nboard.  If some effect board wants to touch the LED status, it might as\nwell just connect to the LED itself.  Having access to a dual voltage\nrail would seem to be a lot more important.\n\nFinally - and probably most importantly for actual sound and current\neffects boards - add a low-pass filter on the voltage lines.  Because as\nexpected, the negative power supply did add a lot of noise to the VIN\nline.\n\nThe base board itself doesn't actually care, but the effects boards do.\n\nAn actual LDO would be better, but I don't have any simple fixed ones in\nmy parts library (except for the 5V one, which seems a bit sad).\nCurrent effects boards don't use a lot of current and only care about\nthe voltage being stable, so let's try this simple model.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-27T18:43:17Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/245f7595e13c3b63c0932ca9b03752df6ab3114d"
+  }, {
+    "sha" : "88673d25073955f30435f737563a38ea9d4aead8",
+    "commit" : {
+      "message" : "Buffered base: use negative rail for JFET switching\n\nThis _still_ doesn't do any actual buffering, but with the negative\nrail, we now no longer need to rebase the signals to some mid-point\nvoltage, and we can just leave the signals ground-references and use the\nnegative rail for switching.\n\nThat streamlines the signal path, and will make it easier to just insert\nan opamp or two in there too.  But I remain more interested in getting\nthe switching side sorted out properly, so that's the primary goal here.\n\nThis tweaks the push-on push-off circuit a bit too, since taht one now\nneeds to switch between positive and negative voltages rather than VIN\nand ground.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-20T17:20:47Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/88673d25073955f30435f737563a38ea9d4aead8"
+  }, {
+    "sha" : "0b63442c4bea3f725743b49470d860dca25431ac",
+    "commit" : {
+      "message" : "Add negative power rail to the buffered base design\n\nThe negative voltage isn't actually _used_ anywhere yet, but this is\nprep-work for making that buffered base board do the long promised\nbuffering, as I'm currently leaning towards opamps.\n\nThe LT3462A is very easy to use, but in a probably completely misguided\nattempt at keeping any stray ground return currents on the power supply\nside, I added a ground plane keepout.  No isolation, but an attempt to\nat least make the easy path for any return currents to stay in that\n\"power supply area\" and hopefully not show up around the analog parts.\n\nSomebody who knows what they are about would probably tell me I'm just\nmaking things worse.  But I'm a sw engineer, so pretty much by\ndefinition I don't know anybody who knows what they are doing.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-19T18:43:04Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/0b63442c4bea3f725743b49470d860dca25431ac"
+  }, {
+    "sha" : "4bda7bcb3de6513e2cb90b4d301b8fa22e1f8b0d",
+    "commit" : {
+      "message" : "Add LT3462A symbol\n\nI'm going to experiment with a negative power rail one more time, and in\nthe LT3462A I found a DC/DC converter that looks a lot more pleasant\nthan the ones I've tried before.\n\nNot only is it a nice TSOT-23-6 footprint, but it has an integrated\nschottky diode so it's easy to use.  And it's a fixed frequency dual\ninductor inverter design, so it should be reasonably quiet in the audio\nfrequency.\n\nI'm not planning to bother with LDOs to clean up the power rails,\nbecause the reason for the power rail would be the op-amp for buffering,\nand the PSRR of any quality opamp should make it all irrelevant.\n\nI dunno.  Every time I've tried this, it's just been noise hell, so this\nis probably a bad idea.  Even when you can't actually _hear_ the noise,\nit ends up just messing with the signal on the scope and making it\nharder to judge whether the circuit is doing well or not.  But I keep\ntrying.\n\nWhat was the definition of insanity again? I forget.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-19T18:05:35Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/4bda7bcb3de6513e2cb90b4d301b8fa22e1f8b0d"
+  }, {
+    "sha" : "17f58eb621068fc07604c08a67e96cacadbc6b5c",
+    "commit" : {
+      "message" : "Split the buffered base over multiple schematic pages, do PCB layout\n\nSo this thing is still mis-named, in that it doesn't actually buffer the\nsignal at all, it only does the transistor soft-switching.  But I _will_\nadd buffering at some point, it's just not the interesting part of this\nall, since I've done that part before.\n\nBut because I wrote explanations for the push-on / push-off circuit, and\nbecause I split things up into small parts, the schematic was getting\npretty crowded.  So I decided to split up the actually interesting part\nof the schematic - the switching side - onto a schematic page of its\nown.\n\nAnd while doing that, I moved the simulation infrastructure to its own\npage too.\n\nThat leaves the toplevel page pretty empty with mainly just the\nconnectors and the basic signal and power filtering, but that's where\nthe buffers will go eventually.\n\nAnd because it simulates fine, I want to actually see if it works in\nreality.  So this also does the PCB layout.  There's tons of room left\nfor any future buffering circuit, whether I then do it with discrete\nJFETs or decide that op-amps are the sane thing here.\n\nI used a random regular tactile switch - which I don't actually have in\nmy parts library.  I'll just wire up two wires and test it that way (and\nI do have some momentary SPDT stomp switches around that I can attach to\nthe wires).\n\nBut longer-term, one of the points of this kind of electronic switching\nis that you can do it multiple ways, and aren't limited to a physical\nswitch - or indeed just a single one.  So maybe I'll do some remote\nswitching thing, or play around with using a hall effect sensor and a\nmagnet, or whatever.\n\nThere are always new things to learn about...  But let's make sure the\nbasics of this thing actually works first.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-18T16:21:11Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/17f58eb621068fc07604c08a67e96cacadbc6b5c"
+  }, {
+    "sha" : "2161ab88ca723f17d29b7abdb9856e0c2723675e",
+    "commit" : {
+      "message" : "Buffered base: add RF filter after JFET switches\n\nIt turns out that getting rid of the switching pop seems to be as simple\nas that.\n\nMaybe time to do PCB layout and see if reality matches simulation?\n\nI do think I should do the buffer that this doesn't do despite the name.\nThat was the intent, but then it worked so well without it..  An op-amp\nwould be the sane thing to do, but since I've been on a \"discrete\ncomponents\" tear, I suspect I'd just do a JFET voltage follower.\n\nBut then I feel like I should make up for the inevitable signal loss.\nOr use a common source thing that does a phase reversal? That seems\nwrong too.  Perhaps do another dual JFET for a common source both at\ninput and output?\n\nDecisions, decisions.\n\nAnyway, this doesn't do any of that.  This just gets rid of the\nswitching pop in simulation.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-17T22:02:00Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/2161ab88ca723f17d29b7abdb9856e0c2723675e"
+  }, {
+    "sha" : "e7c38a0b4187543798f6b8ab08c4f36af1a91542",
+    "commit" : {
+      "message" : "Wire the soft-switch up to actually switch signal and LED\n\nSurprisingly, this actually seems to work fine.  In simulation only, of\ncourse.\n\nAnd not surprisingly, according to the same simulation, it has an\nimpressively horrible pop at switching time.  This very much reminds me\nof the broken \"Tremolo doubling as a metronome\" thing, which was due to\nthe exact same thing: very harsh and sudden driving of the JFET gate.\n\nIt's made worse by the MOSFET switching having the same thing.  Big\nvoltage spike when turning off, presumably due to capacitive parasitics\nor whatever.\n\nPossibly helped by adding a resistor at the gate or something, but\nunlike the tremolo, the switching event is rare.  So right now I simply\ndon't care.  I'm just _simulating_ switching things at a 5Hz rate, so it\nshows up like a sore thumb.\n\nI haven't done layout, and I haven't added a real switch yet, so this is\nall just simulation.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-17T17:34:49Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/e7c38a0b4187543798f6b8ab08c4f36af1a91542"
+  }, {
+    "sha" : "b9552bb1129fca7fc325262b58d88be0a891a7f3",
+    "commit" : {
+      "message" : "Add the beginnings of a dubious buffered base board\n\nAs part of looking at what I should try to use my MOSFETs for, I decided\nI should finally look at a soft-switch buffered base board.\n\nThis is not it, but it starts with a very dubious push-on push-off\nMOSFET circuit.  I doubt it really works, even if it simulates\nbeautifully.  But I don't simulate any debounce issues etc, although I\ndon't see why it wouldn't deal with that too.\n\nAll the real push-on push-off circuits I've seen are more complex than\nthis, which is the main reason why I doubt that my simple circuit really\nworks.  It's a bit *too* simple.  Everybody uses some flip-flop and/or\nschmitt trigger or other fancier things.\n\nBut hey, maybe my google-fu is weak and I just didn't find the right\nthing and there are even simpler ways to do this.  Plus I admittedly\ncame at this from an odd direction of \"what can I do with discrete\nMOSFETs\".  Sane people don't do that.\n\nAnyway, the basic of the push-on push-off circuit is - as always - a\ncapacitor that alternates between being discharged and charged up.  Then\ntwo transistors that reinforce each other's state.\n\nIn this case, the capacitor is connected to the gate of the PMOSFET\nthrough the momentary switch.  So if you press the switch and the\ncapacitor was discharged, the PMOSFET starts conducting, while if you\npress the switch and the capacitor was charged, the PMOSFET turns off.\n\nThe rest of the circuit is just the complementary NMOSFET that then\nfollows the PMOSFET state and re-inforces whatever state it was in, and\nthe resistors to make it all work sanely.  The only important thing is\nto make sure the resistors have sane values to not do bad things while\nthe switch is pressed.\n\nIt all simulates ok, and I don't see why it wouldn't work.\n\nAnyway, this *only* does that silly push-on push-off logic.  It isn't\nactually hooked up any way yet.  Not even the LED to show the state,\nmuch less any JFETs to switch the actual signal around.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-17T14:58:31Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/b9552bb1129fca7fc325262b58d88be0a891a7f3"
+  }, {
+    "sha" : "2755a4e06e3bacd9916b67b1d7e4c6f3c399c423",
+    "commit" : {
+      "message" : "Add a few dual MOSFET symbols\n\nSo I think I mostly understand JFETs, and I did BJT's earlier, so now\nit's time for some MOSFET love.  Sure, I've used a P-channel MOSFET for\nthe high-side power thing, but that's still just trivial switching.  I\nneed to learn the whole small-signal AC thing and biasing etc.\n\nAnd since I like the dual transistor form factors, and TSOT-23-6 is\nabout the right size for me, here's three different ones:\n\n - DMN3060LVT: dual N-channel MOSFET\n - DMP3164LVT: dual P-channel MOSFET\n - DMC3071LVT: dual complementary MOSFET\n\nall three are fairly similar: 30V breakdown voltages, capable of a\ncouple of amps.  The complementary one is a bit beefier and has slightly\nhigher V_{TH} values, but we're still looking at roughly the same kind\nof thing.\n\nLet's see what I can do with these.  I didn't actually pick these based\non any sane and deep characteristics, they may be entirely the wrong\nthing, but that's what we're going to find out.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-15T20:45:30Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/2755a4e06e3bacd9916b67b1d7e4c6f3c399c423"
+  }, {
+    "sha" : "ef2035e7ea8add16c300c4e625d2bc0302478158",
+    "commit" : {
+      "message" : "Update compressor PCB layout too\n\nThis does the new trial matches JFET thing as a board layout too.  I'm\nreally not convinced this was worth it, and the routing and layout are a\nbit of a mess, but it's all part of the whole learnign experience, and I\ndo want to see if the self-biasing thing actually works in real life or\nit just happens to look ok in simulation with the particular simulation\nvalues.\n\n.. and the usual noise from KiCad inexplicably changing randon things\nwhen looking at files.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-15T15:00:11Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/ef2035e7ea8add16c300c4e625d2bc0302478158"
+  }, {
+    "sha" : "cc0a4e7f40660a5f8846436fdd00e37ccf6699bf",
+    "commit" : {
+      "message" : "Compressor: base the compressor level voltage on matched JFET\n\nThis is an attempt at basing the compression level voltage on the\nmatched JFET, making the level knob hopefully more reliably sane in the\nface of different JFET characteristics.\n\nI'm not entirely convinced I shouldn't just use a trim pot, but I do\nthink this is a more interesting approach.  It basically picks the base\nvoltage from the self-biasing voltage of the matched JFET, guaranteeing\nthat the level voltage pot starts close to V_{GSOFF}.  The level pot is\nthen basically controlling the DC bias on top of that.\n\nThis also tries to make the actual attentuation circuit clearer and\nhopefully better.  Both the JFET drain and source are biased to the\ncompression level voltage, while the base is biased to the signal peak\ndetector (the somewhat mis-named \"RECT\" net).\n\nThe source then also gets the signal, and when V_{GS} gets close to zero\n(ie RECT gets close to LEVEL) the JFET starts conducting and the AC\nsignal is attenuated through the JFET to the capacitor to ground at the\ndrain.\n\nThe base gets half the AC signal (on top of the DC peak bias) as before\nto minimize distortion (ie the AC signal at the base is halfway between\nthe AC signal at source and the lack of AC signal at drain).\n\nThis all seems to still simulate well, and the behavior of the level pot\nseems to mostly make sense.  How well it works with actual random JFET\ncharacteristics and whether the matching model works, I don't know.\n\nI still need to actually lay out the PCB, but I think the schematic is\ngetting closer.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-14T23:14:25Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/cc0a4e7f40660a5f8846436fdd00e37ccf6699bf"
+  }, {
+    "sha" : "56cb0992694644a17913754557ccb86417a59515",
+    "commit" : {
+      "message" : "Update compressor for the LS844 dual JFET\n\nThis is just a quick conversion, not using the matching, just using the\nLS844 as two independent JFETs.\n\nBecause I_{DSS} is lower, the source resistor on the input buffer is\nbigger, so that if I_{DSS} is just 1.5mA the voltage drop over the\nresistor can go up to 3.5V.\n\nSimilarly, tweak the limit resistor values to give a bigger limit\nvoltage range for the bigger V_{GSOFF} range of the LS844, and make the\nnegative feedback resistor divider bigger to account for higher R_{DSON}\nof the LS844.\n\nAlso remove the partial bypassing of the amplification emitter resistor,\nsince the high-frequency damping of the plain base is no more.  Although\nmaybe it wants a brighter sound?\n\nThis seems to simulate ok, although the compression is certainly not\nidentical to the version with the MMBF5103.  That may be real, or may be\njust different spice model default values and swamped by JFET\nvariations.\n\nAnyway, I'll eventually try the \"use self-biasing using the matching\nJFETs to do automatic levels\" eventually, but first I wanted to do the\nminimal conversion and verify that at least the LS844 model seems to be\nok before doing any bigger surgery.\n\nNOTE! This doesn't update the PCB layout for the changes.  Just doing\nthe schematic and simulation checks.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-14T17:06:51Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/56cb0992694644a17913754557ccb86417a59515"
+  }, {
+    "sha" : "136b61ceffb1c02d5ef9aea74f8ac9ce6126f28b",
+    "commit" : {
+      "message" : "Update the plain base to have a 1k RF resistor\n\nThat's what the text on the silkscreen said, but I had tested with a 10k\nresistor (for a 72kHz low pass filter).  But I think it's safer to\nreally only filter out RF (3dB at 723kHz), so make it actually match the\ntext.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-14T16:48:01Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/136b61ceffb1c02d5ef9aea74f8ac9ce6126f28b"
+  }, {
+    "sha" : "30463a9e9332bffd9202bd0554d3df4879b09521",
+    "commit" : {
+      "message" : "Add LS844 dual matched JFET symbol\n\nI'm not loving the JFET level tuning in the compressor pedal, so I have\nthe glimmers of a plan.  Using a dual matched JFET I think I can use\nself-biasing on one of the JFETs to get it into the interesting region,\nand then use the resulting source voltage as the level voltage.\n\nWill that work? Who knows, but this adds the symbol and the simulation\ndata for it so that I can try it out.\n\nIt sounds a bit wasteful to use one JFET just for that, but I've liked\nthe other dual transistor parts, so maybe I'll use this one for other\nthings too where I just want two JFETs even if I don't care about the\nmatching.\n\nThe LS844 seems like a perfectly cromulent JFET to use in general, with\na reasonable V_{GSOFF} range (-1...-3.5V) and I_{DSS} (1.5...15mA).\n\nCompared to the MMBF5103, it has lower I_{DSS} and a slightly larger\nV_{GSOFF} range, but if the matching helps with the variation the latter\nshould be fine.\n\nIf I read the datasheets right, the on-resistance of the LS844 seems to\nbe rather higher in the 100-200 Ohm range.  That too seems ok, but may\nneed tweaking when converting a circuit.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-14T16:06:24Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/30463a9e9332bffd9202bd0554d3df4879b09521"
+  }, {
+    "sha" : "44cd79c051989394d5529a2a4ec4d6562956a6fd",
+    "commit" : {
+      "message" : "Compressor: More kicad file noise\n\nThis just re-annotates the schematic and undoes the workaround for the\nkicad bug with crossed wires that has now been fixed.\n\nLink: https://gitlab.com/kicad/code/kicad/-/issues/21480\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-13T22:11:36Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/44cd79c051989394d5529a2a4ec4d6562956a6fd"
+  }, {
+    "sha" : "dc92304617b7654d93333e5080c75c6db7fd6112",
+    "commit" : {
+      "message" : "Octaver: file noise due to kicad version update\n\nThis also works around a bug in this pre-release of kicad: four wires in\nthe schematic that meet in the middle have their connections removed, so\nyou end up with two crossing wires rather than four connecting wires.\n\nQuite annoying, but for now the workaround seems to be to just never\nhave a join of four wires coming together, but do two three-wire\nconnections.\n\nI'm sure it will get fixed soon in Kicad, but I have been tracking\nrandom daily source versions and rather than downgrade to a working\nversion, I'm working around this misfeature.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-12T22:44:42Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/dc92304617b7654d93333e5080c75c6db7fd6112"
+  }, {
+    "sha" : "072a3b1e49964125f4e49a3e253d331847171544",
+    "commit" : {
+      "message" : "Plain base: noise from kicad version update\n\nNothing changed, just output from loading and saving the files with a\nslightly newer kicad version.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-12T22:28:23Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/072a3b1e49964125f4e49a3e253d331847171544"
+  }, {
+    "sha" : "3d8a0d8a09b0f2131987887acbb6078939c041db",
+    "commit" : {
+      "message" : "Update some compressor component values based on testing\n\nI think I was being a bit too timid wrt the compressor, making it a bit\nboring.  It definitely works, but it looks more interesting with a much\nmore aggressive compression ratio, and a more aggressive signal\namplification to match.\n\nThe level trim pot was also slow to respond because the capacitor to\nkeep it stable was fairly large.\n\nAlso, partially bypass the emitter resistor in the amplification stage\nto give higher frequencies a bit more oomph - the AC signal analysis\nclaims they otherwise attenuated over 10kHz.\n\nMost of this was tested with the old boards (just changed components).\nAnd other parts are \"this looks better in simulation\" (eg the emitter\nresistor bypassing).\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-12T21:17:18Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/1590A/commit/3d8a0d8a09b0f2131987887acbb6078939c041db"
+  } ]
+}, {
+  "repository" : {
+    "name" : "linux",
+    "description" : "Linux kernel source tree",
+    "fork" : false,
+    "language" : "C",
+    "full_name" : "torvalds/linux",
+    "html_url" : "https://github.com/torvalds/linux"
+  },
+  "recentCommits" : [ {
+    "sha" : "b320789d6883cc00ac78ce83bccbfe7ed58afcf0",
+    "commit" : {
+      "message" : "Linux 6.17-rc4",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T22:33:07Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/b320789d6883cc00ac78ce83bccbfe7ed58afcf0"
+  }, {
+    "sha" : "5c3b3264e5858813632031ba58bcd6e1eeb3b214",
+    "commit" : {
+      "message" : "Merge tag 'x86_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip\n\nPull x86 fixes from Borislav Petkov:\n\n - Convert the SSB mitigation to the attack vector controls which got\n   forgotten at the time\n\n - Prevent the CPUID topology hierarchy detection on AMD from\n   overwriting the correct initial APIC ID\n\n - Fix the case of a machine shipping without microcode in the BIOS, in\n   the AMD microcode loader\n\n - Correct the Pentium 4 model range which has a constant TSC\n\n* tag 'x86_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip:\n  x86/bugs: Add attack vector controls for SSB\n  x86/cpu/topology: Use initial APIC ID from XTOPOLOGY leaf on AMD/HYGON\n  x86/microcode/AMD: Handle the case of no BIOS microcode\n  x86/cpu/intel: Fix the constant_tsc model check for Pentium 4",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T16:20:17Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/5c3b3264e5858813632031ba58bcd6e1eeb3b214"
+  }, {
+    "sha" : "fe3ad7a58b581859a1a7c237b670f8bcbf5b253c",
+    "commit" : {
+      "message" : "Merge tag 'sched_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip\n\nPull scheduler fixes from Borislav Petkov:\n\n - Fix a stall on the CPU offline path due to mis-counting a deadline\n   server task twice as part of the runqueue's running tasks count\n\n - Fix a realtime tasks starvation case where failure to enqueue a timer\n   whose expiration time is already in the past would cause repeated\n   attempts to re-enqueue a deadline server task which leads to starving\n   the former, realtime one\n\n - Prevent a delayed deadline server task stop from breaking the\n   per-runqueue bandwidth tracking\n\n - Have a function checking whether the deadline server task has\n   stopped, return the correct value\n\n* tag 'sched_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip:\n  sched/deadline: Don't count nr_running for dl_server proxy tasks\n  sched/deadline: Fix RT task potential starvation when expiry time passed\n  sched/deadline: Always stop dl-server before changing parameters\n  sched/deadline: Fix dl_server_stopped()",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T16:13:00Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/fe3ad7a58b581859a1a7c237b670f8bcbf5b253c"
+  }, {
+    "sha" : "c9e4e96185f45f410b3d0b09c9273c7da5a5c660",
+    "commit" : {
+      "message" : "Merge tag 'irq_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip\n\nPull irq fixes from Borislav Petkov:\n\n - Remove unnecessary and noisy WARN_ONs in gic-v5's init path\n\n - Avoid a kmemleak false positive for the gic-v5's L2 IST table entries\n\n - Fix a retval check in mvebu-gicp's probe function\n\n - Fix a wrong conversion to guards in atmel-aic[5] irqchip\n\n* tag 'irq_urgent_for_v6.17_rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip:\n  irqchip/gic-v5: Remove undue WARN_ON()s in the IRS affinity parsing\n  irqchip/gic-v5: Fix kmemleak L2 IST table entries false positives\n  irqchip/mvebu-gicp: Fix an IS_ERR() vs NULL check in probe()\n  irqchip/atmel-aic[5]: Fix incorrect lock guard conversion",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T16:07:37Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/c9e4e96185f45f410b3d0b09c9273c7da5a5c660"
+  }, {
+    "sha" : "9acd5b8bebea619d414cc6cccc7d13a4e6f02ec2",
+    "commit" : {
+      "message" : "Merge tag 'hardening-v6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux\n\nPull hardening fixes from Kees Cook:\n\n - ARM: stacktrace: include asm/sections.h in asm/stacktrace.h (Arnd\n   Bergmann)\n\n - ubsan: Fix incorrect hand-side used in handle (Junhui Pei)\n\n - hardening: Require clang 20.1.0 for __counted_by (Nathan Chancellor)\n\n* tag 'hardening-v6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux:\n  hardening: Require clang 20.1.0 for __counted_by\n  ARM: stacktrace: include asm/sections.h in asm/stacktrace.h\n  ubsan: Fix incorrect hand-side used in handle",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T15:56:45Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/9acd5b8bebea619d414cc6cccc7d13a4e6f02ec2"
+  }, {
+    "sha" : "1c99e3e9f33add5e193591e051735b1179a4382a",
+    "commit" : {
+      "message" : "Merge tag 'gpio-fixes-for-v6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/brgl/linux\n\nPull gpio fixes from Bartosz Golaszewski:\n\n - fix an off-by-one bug in interrupt handling in gpio-timberdale\n\n - update MAINTAINERS\n\n* tag 'gpio-fixes-for-v6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/brgl/linux:\n  MAINTAINERS: Change Altera-PIO driver maintainer\n  gpio: timberdale: fix off-by-one in IRQ type boundary check",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-31T15:49:55Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/1c99e3e9f33add5e193591e051735b1179a4382a"
+  }, {
+    "sha" : "c8bc81a52d5a2ac2e4b257ae123677cf94112755",
+    "commit" : {
+      "message" : "Merge tag 'arm64-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux\n\nPull arm64 fixes from Catalin Marinas:\n\n - CFI failure due to kpti_ng_pgd_alloc() signature mismatch\n\n - Underallocation bug in the SVE ptrace kselftest\n\n* tag 'arm64-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux:\n  kselftest/arm64: Don't open code SVE_PT_SIZE() in fp-ptrace\n  arm64: mm: Fix CFI failure due to kpti_ng_pgd_alloc function signature",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-30T17:43:53Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/c8bc81a52d5a2ac2e4b257ae123677cf94112755"
+  }, {
+    "sha" : "d82aa5d3501b25bfb7bc2a24a68ad0a83b2ad10b",
+    "commit" : {
+      "message" : "kselftest/arm64: Don't open code SVE_PT_SIZE() in fp-ptrace\n\nIn fp-trace when allocating a buffer to write SVE register data we open\ncode the addition of the header size to the VL depeendent register data\nsize, which lead to an underallocation bug when we cut'n'pasted the code\nfor FPSIMD format writes. Use the SVE_PT_SIZE() macro that the kernel\nUAPI provides for this.\n\nFixes: b84d2b27954f (\"kselftest/arm64: Test FPSIMD format data writes via NT_ARM_SVE in fp-ptrace\")\nSigned-off-by: Mark Brown <broonie@kernel.org>\nLink: https://lore.kernel.org/r/20250812-arm64-fp-trace-macro-v1-1-317cfff986a5@kernel.org\nSigned-off-by: Catalin Marinas <catalin.marinas@arm.com>",
+      "author" : {
+        "name" : "Mark Brown",
+        "email" : "broonie@kernel.org",
+        "date" : "2025-08-12T14:49:27Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/d82aa5d3501b25bfb7bc2a24a68ad0a83b2ad10b"
+  }, {
+    "sha" : "ceca927c86e6f72f72d45487a34368bc9509431d",
+    "commit" : {
+      "message" : "arm64: mm: Fix CFI failure due to kpti_ng_pgd_alloc function signature\n\nSeen during KPTI initialization:\n\n  CFI failure at create_kpti_ng_temp_pgd+0x124/0xce8 (target: kpti_ng_pgd_alloc+0x0/0x14; expected type: 0xd61b88b6)\n\nThe call site is alloc_init_pud() at arch/arm64/mm/mmu.c:\n\n  pud_phys = pgtable_alloc(TABLE_PUD);\n\nalloc_init_pud() has the prototype:\n\n  static void alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,\n                             phys_addr_t phys, pgprot_t prot,\n                             phys_addr_t (*pgtable_alloc)(enum pgtable_type),\n                             int flags)\n\nwhere the pgtable_alloc() prototype is declared.\n\nThe target (kpti_ng_pgd_alloc) is used in arch/arm64/kernel/cpufeature.c:\n\n  create_kpti_ng_temp_pgd(kpti_ng_temp_pgd, __pa(alloc), KPTI_NG_TEMP_VA,\n                          PAGE_SIZE, PAGE_KERNEL, kpti_ng_pgd_alloc, 0);\n\nwhich is an alias for __create_pgd_mapping_locked() with prototype:\n\n  extern __alias(__create_pgd_mapping_locked)\n  void create_kpti_ng_temp_pgd(pgd_t *pgdir, phys_addr_t phys,\n                               unsigned long virt,\n                               phys_addr_t size, pgprot_t prot,\n                               phys_addr_t (*pgtable_alloc)(enum pgtable_type),\n                               int flags);\n\n__create_pgd_mapping_locked() passes the function pointer down:\n\n  __create_pgd_mapping_locked() -> alloc_init_p4d() -> alloc_init_pud()\n\nBut the target function (kpti_ng_pgd_alloc) has the wrong signature:\n\n  static phys_addr_t __init kpti_ng_pgd_alloc(int shift);\n\nThe \"int\" should be \"enum pgtable_type\".\n\nTo make \"enum pgtable_type\" available to cpufeature.c, move\nenum pgtable_type definition from arch/arm64/mm/mmu.c to\narch/arm64/include/asm/mmu.h.\n\nAdjust kpti_ng_pgd_alloc to use \"enum pgtable_type\" instead of \"int\".\nThe function behavior remains identical (parameter is unused).\n\nFixes: c64f46ee1377 (\"arm64: mm: use enum to identify pgtable level instead of *_SHIFT\")\nCc: <stable@vger.kernel.org> # 6.16.x\nSigned-off-by: Kees Cook <kees@kernel.org>\nAcked-by: Ard Biesheuvel <ardb@kernel.org>\nLink: https://lore.kernel.org/r/20250829190721.it.373-kees@kernel.org\nReviewed-by: Ryan Roberts <ryan.roberts@arm.com>\nSigned-off-by: Catalin Marinas <catalin.marinas@arm.com>",
+      "author" : {
+        "name" : "Kees Cook",
+        "email" : "kees@kernel.org",
+        "date" : "2025-08-29T19:07:25Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/ceca927c86e6f72f72d45487a34368bc9509431d"
+  }, {
+    "sha" : "11e7861d680c3757eab18ec0a474ff680e007dc4",
+    "commit" : {
+      "message" : "Merge tag 'for-linus' of git://git.kernel.org/pub/scm/virt/kvm/kvm\n\nPull kvm fixes from Paolo Bonzini:\n \"ARM:\n\n   - Correctly handle 'invariant' system registers for protected VMs\n\n   - Improved handling of VNCR data aborts, including external aborts\n\n   - Fixes for handling of FEAT_RAS for NV guests, providing a sane\n     fault context during SEA injection and preventing the use of\n     RASv1p1 fault injection hardware\n\n   - Ensure that page table destruction when a VM is destroyed gives an\n     opportunity to reschedule\n\n   - Large fix to KVM's infrastructure for managing guest context loaded\n     on the CPU, addressing issues where the output of AT emulation\n     doesn't get reflected to the guest\n\n   - Fix AT S12 emulation to actually perform stage-2 translation when\n     necessary\n\n   - Avoid attempting vLPI irqbypass when GICv4 has been explicitly\n     disabled for a VM\n\n   - Minor KVM + selftest fixes\n\n  RISC-V:\n\n   - Fix pte settings within kvm_riscv_gstage_ioremap()\n\n   - Fix comments in kvm_riscv_check_vcpu_requests()\n\n   - Fix stack overrun when setting vlenb via ONE_REG\n\n  x86:\n\n   - Use array_index_nospec() to sanitize the target vCPU ID when\n     handling PV IPIs and yields as the ID is guest-controlled.\n\n   - Drop a superfluous cpumask_empty() check when reclaiming SEV\n     memory, as the common case, by far, is that at least one CPU will\n     have entered the VM, and wbnoinvd_on_cpus_mask() will naturally\n     handle the rare case where the set of have_run_cpus is empty.\n\n  Selftests (not KVM):\n\n   - Rename the is_signed_type() macro in kselftest_harness.h to\n     is_signed_var() to fix a collision with linux/overflow.h. The\n     collision generates compiler warnings due to the two macros having\n     different meaning\"\n\n* tag 'for-linus' of git://git.kernel.org/pub/scm/virt/kvm/kvm: (29 commits)\n  KVM: arm64: nv: Fix ATS12 handling of single-stage translation\n  KVM: arm64: Remove __vcpu_{read,write}_sys_reg_{from,to}_cpu()\n  KVM: arm64: Fix vcpu_{read,write}_sys_reg() accessors\n  KVM: arm64: Simplify sysreg access on exception delivery\n  KVM: arm64: Check for SYSREGS_ON_CPU before accessing the 32bit state\n  RISC-V: KVM: fix stack overrun when loading vlenb\n  RISC-V: KVM: Correct kvm_riscv_check_vcpu_requests() comment\n  RISC-V: KVM: Fix pte settings within kvm_riscv_gstage_ioremap()\n  KVM: arm64: selftests: Sync ID_AA64MMFR3_EL1 in set_id_regs\n  KVM: arm64: Get rid of ARM64_FEATURE_MASK()\n  KVM: arm64: Make ID_AA64PFR1_EL1.RAS_frac writable\n  KVM: arm64: Make ID_AA64PFR0_EL1.RAS writable\n  KVM: arm64: Ignore HCR_EL2.FIEN set by L1 guest's EL2\n  KVM: arm64: Handle RASv1p1 registers\n  arm64: Add capability denoting FEAT_RASv1p1\n  KVM: arm64: Reschedule as needed when destroying the stage-2 page-tables\n  KVM: arm64: Split kvm_pgtable_stage2_destroy()\n  selftests: harness: Rename is_signed_type() to avoid collision with overflow.h\n  KVM: SEV: don't check have_run_cpus in sev_writeback_caches()\n  KVM: arm64: Correctly populate FAR_EL2 on nested SEA injection\n  ...",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T20:54:26Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/11e7861d680c3757eab18ec0a474ff680e007dc4"
+  }, {
+    "sha" : "86a9b1250602d877a393dcbab5f42472f77ac0f7",
+    "commit" : {
+      "message" : "hardening: Require clang 20.1.0 for __counted_by\n\nAfter an innocuous change in -next that modified a structure that\ncontains __counted_by, clang-19 start crashing when building certain\nfiles in drivers/gpu/drm/xe. When assertions are enabled, the more\ndescriptive failure is:\n\n  clang: clang/lib/AST/RecordLayoutBuilder.cpp:3335: const ASTRecordLayout &clang::ASTContext::getASTRecordLayout(const RecordDecl *) const: Assertion `D && \"Cannot get layout of forward declarations!\"' failed.\n\nAccording to a reverse bisect, a tangential change to the LLVM IR\ngeneration phase of clang during the LLVM 20 development cycle [1]\nresolves this problem. Bump the version of clang that enables\nCONFIG_CC_HAS_COUNTED_BY to 20.1.0 to ensure that this issue cannot be\nhit.\n\nLink: https://github.com/llvm/llvm-project/commit/160fb1121cdf703c3ef5e61fb26c5659eb581489 [1]\nSigned-off-by: Nathan Chancellor <nathan@kernel.org>\nReviewed-by: Justin Stitt <justinstitt@google.com>\nLink: https://lore.kernel.org/r/20250807-fix-counted_by-clang-19-v1-1-902c86c1d515@kernel.org\nSigned-off-by: Kees Cook <kees@kernel.org>",
+      "author" : {
+        "name" : "Nathan Chancellor",
+        "email" : "nathan@kernel.org",
+        "date" : "2025-08-07T21:36:28Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/86a9b1250602d877a393dcbab5f42472f77ac0f7"
+  }, {
+    "sha" : "42a0305ab114975dbad3fe9efea06976dd62d381",
+    "commit" : {
+      "message" : "Merge tag 'kvmarm-fixes-6.17-1' of https://git.kernel.org/pub/scm/linux/kernel/git/kvmarm/kvmarm into HEAD\n\nKVM/arm64 changes for 6.17, take #2\n\n - Correctly handle 'invariant' system registers for protected VMs\n\n - Improved handling of VNCR data aborts, including external aborts\n\n - Fixes for handling of FEAT_RAS for NV guests, providing a sane\n   fault context during SEA injection and preventing the use of\n   RASv1p1 fault injection hardware\n\n - Ensure that page table destruction when a VM is destroyed gives an\n   opportunity to reschedule\n\n - Large fix to KVM's infrastructure for managing guest context loaded\n   on the CPU, addressing issues where the output of AT emulation\n   doesn't get reflected to the guest\n\n - Fix AT S12 emulation to actually perform stage-2 translation when\n   necessary\n\n - Avoid attempting vLPI irqbypass when GICv4 has been explicitly\n   disabled for a VM\n\n - Minor KVM + selftest fixes",
+      "author" : {
+        "name" : "Paolo Bonzini",
+        "email" : "pbonzini@redhat.com",
+        "date" : "2025-08-29T16:57:31Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/42a0305ab114975dbad3fe9efea06976dd62d381"
+  }, {
+    "sha" : "085e899aa19be2ca512302077346d22736174e6d",
+    "commit" : {
+      "message" : "Merge tag 'kvm-riscv-fixes-6.17-1' of https://github.com/kvm-riscv/linux into HEAD\n\nKVM/riscv fixes for 6.17, take #1\n\n- Fix pte settings within kvm_riscv_gstage_ioremap()\n- Fix comments in kvm_riscv_check_vcpu_requests()\n- Fix stack overrun when setting vlenb via ONE_REG",
+      "author" : {
+        "name" : "Paolo Bonzini",
+        "email" : "pbonzini@redhat.com",
+        "date" : "2025-08-29T16:57:18Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/085e899aa19be2ca512302077346d22736174e6d"
+  }, {
+    "sha" : "fb679c832b6497f19fffb8274c419783909c0912",
+    "commit" : {
+      "message" : "Merge tag 'efi-fixes-for-v6.17-1' of git://git.kernel.org/pub/scm/linux/kernel/git/efi/efi\n\nPull EFI fixes from Ard Biesheuvel:\n\n - Assorted fixes for the OP-TEE based pseudo-EFI variable store\n\n - Fix for an OOB access when looking up the same non-existing efivarfs\n   entry multiple times in parallel\n\n* tag 'efi-fixes-for-v6.17-1' of git://git.kernel.org/pub/scm/linux/kernel/git/efi/efi:\n  efivarfs: Fix slab-out-of-bounds in efivarfs_d_compare\n  efi: stmm: Drop unneeded null pointer check\n  efi: stmm: Drop unused EFI error from setup_mm_hdr arguments\n  efi: stmm: Do not return EFI_OUT_OF_RESOURCES on internal errors\n  efi: stmm: Fix incorrect buffer allocation method",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T16:15:46Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/fb679c832b6497f19fffb8274c419783909c0912"
+  }, {
+    "sha" : "2575e638e2d9c70971e5232398ca22afa6f06293",
+    "commit" : {
+      "message" : "Merge tag 'v6.17-rc3-smb3-client-fixes' of git://git.samba.org/sfrench/cifs-2.6\n\nPull smb client fixes from Steve French:\n\n - Fix possible refcount leak in compound operations\n\n - Fix remap_file_range() return code mapping, found by generic/157\n\n* tag 'v6.17-rc3-smb3-client-fixes' of git://git.samba.org/sfrench/cifs-2.6:\n  fs/smb: Fix inconsistent refcnt update\n  smb3 client: fix return code mapping of remap_file_range",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T15:51:34Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/2575e638e2d9c70971e5232398ca22afa6f06293"
+  }, {
+    "sha" : "469447200aed04c383189b64aa07070be052c48a",
+    "commit" : {
+      "message" : "Merge tag 'xfs-fixes-6.17-rc4' of git://git.kernel.org/pub/scm/fs/xfs/xfs-linux\n\nPull xfs fixes from Carlos Maiolino:\n \"The highlight I'd like to point here is related to the XFS_RT\n  Kconfig, which has been updated to be enabled by default now if\n  CONFIG_BLK_DEV_ZONED is enabled.\n\n  This also contains a few fixes for zoned devices support in XFS,\n  specially related to swapon requests in inodes belonging to the zoned\n  FS.\n\n  A null-ptr dereference fix in the xattr data, due to a mishandling of\n  medium errors generated by block devices is also included\"\n\n* tag 'xfs-fixes-6.17-rc4' of git://git.kernel.org/pub/scm/fs/xfs/xfs-linux:\n  xfs: do not propagate ENODATA disk errors into xattr code\n  xfs: reject swapon for inodes on a zoned file system earlier\n  xfs: kick off inodegc when failing to reserve zoned blocks\n  xfs: remove xfs_last_used_zone\n  xfs: Default XFS_RT to Y if CONFIG_BLK_DEV_ZONED is enabled",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T15:09:34Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/469447200aed04c383189b64aa07070be052c48a"
+  }, {
+    "sha" : "02d6eeedbc36d4b309d5518778071a749ef79c4e",
+    "commit" : {
+      "message" : "Merge tag 'hid-for-linus-2025082901' of git://git.kernel.org/pub/scm/linux/kernel/git/hid/hid\n\nPull HID fixes from Jiri Kosina:\n\n - fixes for memory corruption in intel-thc-hid, hid-multitouch,\n   hid-mcp2221 and hid-asus (Aaron Ma, Qasim Ijaz, Arnaud Lecomte)\n\n - power management/resume fix for intel-ish-hid (Zhang Lixu)\n\n - driver reinitialization fix for intel-thc-hid (Even Xu)\n\n - ensure that battery level status is reported as soon as possible,\n   which is required at least for some Android use-cases (José Expósito)\n\n - quite a few new device ID additions and device-specific quirks\n\n* tag 'hid-for-linus-2025082901' of git://git.kernel.org/pub/scm/linux/kernel/git/hid/hid:\n  HID: quirks: add support for Legion Go dual dinput modes\n  HID: elecom: add support for ELECOM M-DT2DRBK\n  HID: logitech: Add ids for G PRO 2 LIGHTSPEED\n  HID: input: report battery status changes immediately\n  HID: input: rename hidinput_set_battery_charge_status()\n  HID: intel-thc-hid: Intel-quicki2c: Enhance driver re-install flow\n  HID: hid-ntrig: fix unable to handle page fault in ntrig_report_version()\n  HID: asus: fix UAF via HID_CLAIMED_INPUT validation\n  hid: fix I2C read buffer overflow in raw_event() for mcp2221\n  HID: wacom: Add a new Art Pen 2\n  HID: multitouch: fix slab out-of-bounds access in mt_report_fixup()\n  HID: Kconfig: Fix spelling mistake \"enthropy\" -> \"entropy\"\n  HID: intel-ish-hid: Increase ISHTP resume ack timeout to 300ms\n  HID: intel-thc-hid: intel-thc: Fix incorrect pointer arithmetic in I2C regs save\n  HID: intel-thc-hid: intel-quicki2c: Fix ACPI dsd ICRS/ISUB length",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T14:44:14Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/02d6eeedbc36d4b309d5518778071a749ef79c4e"
+  }, {
+    "sha" : "ec1abfc8333110b9e645cd59eb3bc0541fd5bd2c",
+    "commit" : {
+      "message" : "Merge tag 'regulator-fix-v6.17-rc3' of git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator\n\nPull regulator fix from Mark Brown:\n \"One simple fix for the pm8008 driver for poor error handling,\n  switching to use a helper which does the right thing in the\n  affected case\"\n\n* tag 'regulator-fix-v6.17-rc3' of git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator:\n  regulator: pm8008: fix probe failure due to negative voltage selector",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T14:37:21Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/ec1abfc8333110b9e645cd59eb3bc0541fd5bd2c"
+  }, {
+    "sha" : "2bd3731542af4d32402fdc0e247153a94efeb682",
+    "commit" : {
+      "message" : "Merge tag 'ata-6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/libata/linux\n\nPull ata fixes from Damien Le Moal:\n\n - Fix the type of return values to be signed in the ahci_xgen driver\n   (Qianfeng)\n\n - Add the mask_port_ext module parameter to the ahci driver.\n\n   This is to allow a user to ignore ports that are advertized as\n   external (hotplug capable) in favor of lower link power management\n   policies instead of the default max_performance for these ports.\n\n   This is useful to allow e.g. laptops to go into low power states when\n   hooked up to docking station with sata slots, connected with an\n   external port for hotplug (me)\n\n* tag 'ata-6.17-rc4' of git://git.kernel.org/pub/scm/linux/kernel/git/libata/linux:\n  ata: ahci_xgene: Use int type for 'rc' to store error codes\n  ata: ahci: Allow ignoring the external/hotplug capability of ports",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T14:29:17Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/2bd3731542af4d32402fdc0e247153a94efeb682"
+  }, {
+    "sha" : "18ee2b9b7bd4e2346e467101c973d62300c8ba85",
+    "commit" : {
+      "message" : "Merge tag 'drm-fixes-2025-08-29' of https://gitlab.freedesktop.org/drm/kernel\n\nPull drm fixes from Dave Airlie:\n \"Weekly fixes, feels a bit big.\n\n  The major piece is msm fixes, then the usual amdgpu/xe along with some\n  mediatek and nouveau fixes and a tegra revert.\n\n  gpuvm:\n   - fix some typos\n\n  xe:\n   - Fix user-fence race issue\n   - Couple xe_vm fixes\n   - Don't trigger rebind on initial dma-buf validation\n   - Fix a build issue related to basename() posix vs gnu discrepancy\n\n  amdgpu:\n   - pin buffers while vmapping\n   - UserQ fixes\n   - Revert CSA fix\n   - SR-IOV fix\n\n  nouveau:\n   - fix linear modifier\n   - remove some dead code\n\n  msm:\n   - Core/GPU:\n      - fix comment doc warning in gpuvm\n      - fix build with KMS disabled\n      - fix pgtable setup/teardown race\n      - global fault counter fix\n      - various error path fixes\n      - GPU devcoredump snapshot fixes\n      - handle in-place VM_BIND remaps to solve turnip vm update race\n      - skip re-emitting IBs for unusable VMs\n      - Don't use %pK through printk\n      - moved display snapshot init earlier, fixing a crash\n   - DPU:\n      - Fixed crash in virtual plane checking code\n      - Fixed mode comparison in virtual plane checking code\n   - DSI:\n      - Adjusted width of resulution-related registers\n      - Fixed locking issue on 14nm PLLs\n   - UBWC (per Bjorn's ack)\n      - Added UBWC configuration for several missing platforms (fixing\n        regression)\n\n  mediatek:\n   - Add error handling for old state CRTC in atomic_disable\n   - Fix DSI host and panel bridge pre-enable order\n   - Fix device/node reference count leaks in mtk_drm_get_all_drm_priv\n   - mtk_hdmi: Fix inverted parameters in some regmap_update_bits calls\n\n  tegra:\n   - revert dma-buf change\"\n\n* tag 'drm-fixes-2025-08-29' of https://gitlab.freedesktop.org/drm/kernel: (56 commits)\n  drm/mediatek: mtk_hdmi: Fix inverted parameters in some regmap_update_bits calls\n  drm/amdgpu/userq: fix error handling of invalid doorbell\n  drm/amdgpu: update firmware version checks for user queue support\n  drm/amd/amdgpu: disable hwmon power1_cap* for gfx 11.0.3 on vf mode\n  Revert \"drm/amdgpu: fix incorrect vm flags to map bo\"\n  drm/amdgpu/gfx12: set MQD as appriopriate for queue types\n  drm/amdgpu/gfx11: set MQD as appriopriate for queue types\n  drm/xe: switch to local xbasename() helper\n  drm/xe: Don't trigger rebind on initial dma-buf validation\n  drm/xe/vm: Clear the scratch_pt pointer on error\n  drm/xe/vm: Don't pin the vm_resv during validation\n  drm/xe/xe_sync: avoid race during ufence signaling\n  Revert \"drm/tegra: Use dma_buf from GEM object instance\"\n  soc: qcom: use no-UBWC config for MSM8956/76\n  soc: qcom: add configuration for MSM8929\n  soc: qcom: ubwc: add more missing platforms\n  soc: qcom: ubwc: use no-uwbc config for MSM8917\n  drm/msm/dpu: Add a null ptr check for dpu_encoder_needs_modeset\n  dt-bindings: display/msm: qcom,mdp5: drop lut clock\n  drm/gpuvm: fix various typos in .c and .h gpuvm file\n  ...",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2025-08-29T02:56:32Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/linux/commit/18ee2b9b7bd4e2346e467101c973d62300c8ba85"
+  } ]
+}, {
+  "repository" : {
+    "name" : "pesconvert",
+    "description" : "Brother PES file converter",
+    "fork" : false,
+    "language" : "C",
+    "full_name" : "torvalds/pesconvert",
+    "html_url" : "https://github.com/torvalds/pesconvert"
+  },
+  "recentCommits" : [ {
+    "sha" : "d6d7001bc0c608514e46b2a1a2ed341269d2f226",
+    "commit" : {
+      "message" : "cairo, svg: ignore empty blocks\n\nFixes crash bug found with the afl fuzzer.\n\nSigned-off-by: Max Kellermann <max.kellermann@gmail.com>",
+      "author" : {
+        "name" : "Max Kellermann",
+        "email" : "max.kellermann@gmail.com",
+        "date" : "2017-12-04T09:49:04Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/d6d7001bc0c608514e46b2a1a2ed341269d2f226"
+  }, {
+    "sha" : "e8950f1cf59a7e4e2a6474096a9e15e1b7f764dc",
+    "commit" : {
+      "message" : "cairo,svg: convert \"while\" to \"for\" (code simplification)\n\nSigned-off-by: Max Kellermann <max.kellermann@gmail.com>",
+      "author" : {
+        "name" : "Max Kellermann",
+        "email" : "max.kellermann@gmail.com",
+        "date" : "2017-12-04T09:47:10Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/e8950f1cf59a7e4e2a6474096a9e15e1b7f764dc"
+  }, {
+    "sha" : "d714693afa9fe87fa1f0f6a8994aaf0d30f8413c",
+    "commit" : {
+      "message" : "pes: check the color index, fail if out of range\n\nFixes crash when there are more than 256 blocks.\n\nSigned-off-by: Max Kellermann <max.kellermann@gmail.com>",
+      "author" : {
+        "name" : "Max Kellermann",
+        "email" : "max.kellermann@gmail.com",
+        "date" : "2017-12-04T09:34:05Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/d714693afa9fe87fa1f0f6a8994aaf0d30f8413c"
+  }, {
+    "sha" : "2465e523fea3598b17e0c96ab63885f6e8aab3a6",
+    "commit" : {
+      "message" : "pes: new_block() fails if undefined color is referenced\n\nFixes crash when the file's color table is too short.\n\nSigned-off-by: Max Kellermann <max.kellermann@gmail.com>",
+      "author" : {
+        "name" : "Max Kellermann",
+        "email" : "max.kellermann@gmail.com",
+        "date" : "2017-12-04T07:33:47Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/2465e523fea3598b17e0c96ab63885f6e8aab3a6"
+  }, {
+    "sha" : "bcc7211c793413adcd551c1e5369aeb0b43be54e",
+    "commit" : {
+      "message" : "pes: add missing new_block() error check\n\nSigned-off-by: Max Kellermann <max.kellermann@gmail.com>",
+      "author" : {
+        "name" : "Max Kellermann",
+        "email" : "max.kellermann@gmail.com",
+        "date" : "2017-12-03T22:18:11Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/bcc7211c793413adcd551c1e5369aeb0b43be54e"
+  }, {
+    "sha" : "4f36a5c918231254209374788c873dfcbe4002d1",
+    "commit" : {
+      "message" : "Mark the \"big y displacement\" case as a jumpstitch too\n\nAnother case pointed out by Trever and missed in his first patch.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-01-19T20:40:37Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/4f36a5c918231254209374788c873dfcbe4002d1"
+  }, {
+    "sha" : "c3ab5a56681873e35ef17b5eade00c29330c0201",
+    "commit" : {
+      "message" : "Fix jumpstitch output\n\nI noticed that your thumbnailer shows jump stitches yielding some ugly\nthread lines in some cases.\n\nI have attached a patch which solves this problem. Feel free to use it,\nmodify it, whatever.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Trever L. Adams",
+        "email" : "trever.adams@gmail.com",
+        "date" : "2012-01-19T07:14:20Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/c3ab5a56681873e35ef17b5eade00c29330c0201"
+  }, {
+    "sha" : "b7621097afe1cbb4fb07fd61482e8d38716cbfa6",
+    "commit" : {
+      "message" : "Simplify and fix block allocation\n\nThis was just totally broken.  Since we used to re-alloc the pes blocks,\nwe cannot maintain a list of them: the pointers change.\n\nSo stop realloc'ing the blocks, and instead just realloc the stitch\nlist.  And simplify the list handling while at it.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2011-12-02T21:01:19Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/b7621097afe1cbb4fb07fd61482e8d38716cbfa6"
+  }, {
+    "sha" : "89ff2f5c5abb3cd6d54d59cd3f4aa81dd644ff9e",
+    "commit" : {
+      "message" : "Add thumbnailer entry for gnome3\n\ngnome3 changed the rules for how thumbnailer applications work.  For the\nbetter, but without any real documentation.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@dell.linux-foundation.org",
+        "date" : "2011-12-02T18:09:14Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/89ff2f5c5abb3cd6d54d59cd3f4aa81dd644ff9e"
+  }, {
+    "sha" : "34823ef264b8049f83aeef1fe86d005eeba29345",
+    "commit" : {
+      "message" : "pesconvert: Fixed row init range in output_png().\n\nThis prevents a segfault for small embroidery patterns or large\noutput dimensions.\n\nEven though output_png() is dead code, there is a slight chance,\nthat someone lacks libcairo-dev while being offline. ;-)\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Torsten Scheck",
+        "email" : "torsten.scheck@gmx.de",
+        "date" : "2010-03-22T09:28:49Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/34823ef264b8049f83aeef1fe86d005eeba29345"
+  }, {
+    "sha" : "180dd57af67d8176819ea8ff322c315d8425c9cf",
+    "commit" : {
+      "message" : "Add a 'density' argument for thread thickness\n\nI like the default thin thread effect, but using a density of 2.5 or so\nseems to be a bit more realistic on my test-case.  Which may be more\nabout the test-case than anything else, but whatever.\n\nSo with this, you can do something like\n\n\tpesconvert -d 2.5 -s 512 Jan_heartsdelight.pes s512.png\n\nto generate a 512-pixel sized version of the Brother example file.\n\nMaking the \"thread\" thicker also meant that the line join matters a lot\nmore.  A miter join (the cairo default) is not how thread works and\nmakes it all look very jagged.  So make it use a round join instead.\n\nThe line cap could probably be a butt cap, but I set it to round too.  I\ndoubt anybody will see any difference, since thread ends aren't common.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-14T02:01:44Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/180dd57af67d8176819ea8ff322c315d8425c9cf"
+  }, {
+    "sha" : "6e7a7fca8268b4c65e22122f8987da2f0e747754",
+    "commit" : {
+      "message" : "Fix some trivial scaling problems\n\nI used to scale everything to be square.  That was fine for testing, but\nnot so great for actual use.  This makes it all look better when the\ninput isn't square.  It also scales the width of the line properly.\n\nAnd in honor of this actually being useful (it's installed on Tove's\nmachine now), let's sign off on it all.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T21:27:34Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/6e7a7fca8268b4c65e22122f8987da2f0e747754"
+  }, {
+    "sha" : "66ff8cb8a56396ab8b5958b3411a36228010e1fb",
+    "commit" : {
+      "message" : "Copy pesconvert to the system thumbnailer\n\nYeah, yeah, people who know how to do rpm's and autoconf think this is\nugly.  Whatever.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T21:18:03Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/66ff8cb8a56396ab8b5958b3411a36228010e1fb"
+  }, {
+    "sha" : "e7ffff71f7e23d5bb6cf2cf4ed5be5ed87eccbc8",
+    "commit" : {
+      "message" : "Teach pesconvert a few command line options",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T20:49:30Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/e7ffff71f7e23d5bb6cf2cf4ed5be5ed87eccbc8"
+  }, {
+    "sha" : "4c3c754d9ea5b3c66e58a884cc17c75fbafee38b",
+    "commit" : {
+      "message" : "Add thumbnailer gnome gconftool-2 setting\n\n.. not that the program actually conforms to the syntax I used, but\nwhatever. Maybe I'll get to it next.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T20:39:12Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/4c3c754d9ea5b3c66e58a884cc17c75fbafee38b"
+  }, {
+    "sha" : "1ac1fc733d4f5416743ecc1c8e667eb86e722f2a",
+    "commit" : {
+      "message" : "Add silly rule to teach the system about PES files\n\nXML? F*ck me with a ten-foot pole.  But if I want the thumbnailer, I\napparently need this.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T20:31:19Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/1ac1fc733d4f5416743ecc1c8e667eb86e722f2a"
+  }, {
+    "sha" : "9a25d4891925352b4920af1c40c46e15444f091d",
+    "commit" : {
+      "message" : "Split out main() into its own file\n\nThis leaves the actual pes-reading code in pes.c, and puts the\nconversion logic in main.c.\n\nI should add some argument parsing code so that it can specify\nexactly what/how to convert things.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T20:22:20Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/9a25d4891925352b4920af1c40c46e15444f091d"
+  }, {
+    "sha" : "7a54bf8213a7e6ee91fe53cec3eb9f06fc71f221",
+    "commit" : {
+      "message" : "Add a 'cairo' backend for output\n\nThis is way better and simpler than the png one, since cairo can also\nwrite png's, but makes the line drawing and thin lines all very easy.\n\nThis is still totally hardcoded, but it's starting to be useful! It\noutputs the result as \"out.png\"",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T20:13:29Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/7a54bf8213a7e6ee91fe53cec3eb9f06fc71f221"
+  }, {
+    "sha" : "5107cd54456f8e0fb31823434d30a60323a9224c",
+    "commit" : {
+      "message" : "Add stupid PNG support\n\nIt's stupid because:\n - it's fixed to output 128x128 png images (think preview icons)\n - it doesn't actually draw lines, it just does them as dots at the endpoints\nbut it does kind of work.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T19:46:50Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/5107cd54456f8e0fb31823434d30a60323a9224c"
+  }, {
+    "sha" : "7a7221a3b06882d314d4256d31cdf4a68c2f6b5d",
+    "commit" : {
+      "message" : "Initial PES conversion\n\nRight now it just knows how to convert to SVG. Which isn't\nall that interesting, but the parsing logic comes from\n\n\thttps://bugs.launchpad.net/inkscape/+bug/247463\n\nwhich has a php script to do this, and it's all based on that.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2010-01-13T19:25:53Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/pesconvert/commit/7a7221a3b06882d314d4256d31cdf4a68c2f6b5d"
+  } ]
+}, {
+  "repository" : {
+    "name" : "test-tlb",
+    "description" : "Stupid memory latency and TLB tester",
+    "fork" : false,
+    "language" : "C",
+    "full_name" : "torvalds/test-tlb",
+    "html_url" : "https://github.com/torvalds/test-tlb"
+  },
+  "recentCommits" : [ {
+    "sha" : "14321e3356829d4c6e7724b7b7fd406a4af31667",
+    "commit" : {
+      "message" : "README: minor typos fix\n\nVerified with GNU Aspell spell checker.\n\nSigned-off-by: Christopher Diaz Riveros <chrisadr@gentoo.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Christopher Diaz Riveros",
+        "email" : "chrisadr@gentoo.org",
+        "date" : "2018-02-10T13:15:24Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/14321e3356829d4c6e7724b7b7fd406a4af31667"
+  }, {
+    "sha" : "16e929a524b116167491d8cab822197646ff3af5",
+    "commit" : {
+      "message" : "Improve on the timing logic a bit more\n\nTime the warmup run to make a better estimate of how long to run the\nreal runs.  We want to balance getting timely results with still\nactually having the time to actually traverse the full list a few times.\n\nThis basically aims for the real run to traverse the list at least five\ntimes, but to also run for at least a fifth of a second.  Because five\nis obviously a holy random number, and is also how many times we run the\ntest to try to de-noise the final number.\n\nThis also changes \"make run\" to actuall test the 256M case like the\nREADME says (rather than stop at 128M).\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-27T19:00:27Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/16e929a524b116167491d8cab822197646ff3af5"
+  }, {
+    "sha" : "4210d1cfc58f2d8a3da0730389ee63d68c6fe914",
+    "commit" : {
+      "message" : "Improve on map re-allocation strategy\n\nDon't bother reallocating hugepage mappings, the cache associativity\nissues are hopefully not all that noticeable with big pages to begin\nwith, and with fewer big pages to go around it's likely less effective\nto try to change the mapping anyway.\n\nFor the regular page case, force any remapping to over-map the old\nmapping, which will free the old pages.  That might cause the new\nmapping to have similar allocation patterns as the old one, but not\nusing excessive amounts of memory still makes this the better option.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-27T18:38:02Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/4210d1cfc58f2d8a3da0730389ee63d68c6fe914"
+  }, {
+    "sha" : "4ac62b9733ffd669df882894efaf2afc2b8fa5ef",
+    "commit" : {
+      "message" : "Try to increase result stability by running multiple rounds\n\nThis runs things five times, randomizing the list in between each run,\nand then picks the minimum cycle time of the five.  That makes the\nresults more stable.\n\nThere's a few downsides to this:\n\n (a) to avoid taking five times as long, each run only runs for half a\n     second. Which might not actually be enough to go around for big\n     memory areas.\n\n (b) is minimum cycle time actually good? It's _usually_ the right thing\n     to do for latency benchmarks, but it might also end up showing the\n     \"good case\", ie when the mapping happened to cause the fewest\n     associativity misses etc.\n\n (c) the code is currently intentionally stupid and doesn't even free\n     the old mappings, which is good to make sure that we don't get the\n     same virtual memory pattern, but might cause problems when you want\n     to test under low-memory conditions (just to pick one example).\n\nI'll have to think about this some more, but let's try it.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-27T00:51:13Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/4ac62b9733ffd669df882894efaf2afc2b8fa5ef"
+  }, {
+    "sha" : "d352c0df205df0c6b4ee34de20ca4fe414000cb3",
+    "commit" : {
+      "message" : "Add README and LICENSE.txt file\n\n... and a .gitignore file.\n\nAll prepping for putting it on github or something\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-24T20:04:03Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/d352c0df205df0c6b4ee34de20ca4fe414000cb3"
+  }, {
+    "sha" : "784130fab5b9dc23c405f15d48e09d2a1850c0ab",
+    "commit" : {
+      "message" : "Allow odd stride values\n\nThey are actually quite useful for testing unaligned behavior: does it\nslow down every access, or does it slow down only some accesses?\n\nFor example, on my i7-6700K, I get\n\n\t[torvalds@i7 test-tlb]$ ./test-tlb 16k 12\n\t  1.29ns (~5.0 cycles)\n\n\t[torvalds@i7 test-tlb]$ ./test-tlb 16k 11\n\t  1.36ns (~5.3 cycles)\n\nwhich means that the unaligned load case is actually very low in pointer\nchasing situations.  With a stride of 11, 75% of all the memory accesses\nwill be unaligned, but it only costs an additional 0.3 cycles on average.\n\nThe reason is that unaligned loads are basically free, except when they\ncross some other boundary (*).  To test what the cost of that is, I'd\nneed to add a \"offset\" parameter and allow people to force every access\nto be a bank crosser.\n\nSome day.\n\n(*) There may be other costs, like just resource use costs.  But the\nkinds of boundaries that tend to matter are L1 D$ boundaries (that need\nto access two lines), but also obviously page-crossers (that need two\nTLB entries), and also sub-banks in the L1 (depending on width of the L1\ninterface).\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-24T19:32:52Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/784130fab5b9dc23c405f15d48e09d2a1850c0ab"
+  }, {
+    "sha" : "cedcf70019525126b5c7a866d494b1ac9ff6f9d7",
+    "commit" : {
+      "message" : "Work even in the presense of transparent hugepage  \"always\".\n\nChristian Borntraeger tested on an s390, and had transparent hugepages\nset to \"always\", which meant that the small-page case never triggered at\nall.\n\nSo when not testing the hugepage case, explicitly do a\n\n\tmadvise(MADV_NOHUGEPAGE)\n\non the memory allocation.\n\nReported-by: Christian Borntraeger <christian@borntraeger.net>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-23T18:27:05Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/cedcf70019525126b5c7a866d494b1ac9ff6f9d7"
+  }, {
+    "sha" : "3a301fed084a9bcafaba5167d942b5ae087baef9",
+    "commit" : {
+      "message" : "Use gettimeofday for start/end\n\nIn case your \"alarm(1)\" isn't entirely precise.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-22T17:32:19Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/3a301fed084a9bcafaba5167d942b5ae087baef9"
+  }, {
+    "sha" : "fba590607d628957cc95fab18b51a45b6556b7c5",
+    "commit" : {
+      "message" : "Improve the tester some more, remove the old TLB-only code",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-21T23:58:39Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/fba590607d628957cc95fab18b51a45b6556b7c5"
+  }, {
+    "sha" : "cea022182fd990b119d04b486c1ff212378797f1",
+    "commit" : {
+      "message" : "Try to create test of truly random list walker\n\n.. with hugetlb and without.\n\nIt may be broken.",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-21T22:16:31Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/cea022182fd990b119d04b486c1ff212378797f1"
+  }, {
+    "sha" : "bf9779cf2664c0ca8810a6e23c8f810add7be297",
+    "commit" : {
+      "message" : "Very hacky TLB timing tester",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-17T20:17:03Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/test-tlb/commit/bf9779cf2664c0ca8810a6e23c8f810add7be297"
+  } ]
+}, {
+  "repository" : {
+    "name" : "uemacs",
+    "description" : "Random version of microemacs with my private modificatons",
+    "fork" : false,
+    "language" : "C",
+    "full_name" : "torvalds/uemacs",
+    "html_url" : "https://github.com/torvalds/uemacs"
+  },
+  "recentCommits" : [ {
+    "sha" : "1cdcf9df88144049750116e36fe20c8c39fa2517",
+    "commit" : {
+      "message" : "Allow bigger filenames\n\nNot that I know why. 80-character filename limits are kind of cute.\n\nJoerg suggested _POSIX_PATH_MAX, which is almost certainly the right\nvalue.  But that's bigger than HUGE:\n\n   #define HUGE    1000           /* Huge number                  */\n\nwhich obviously means we shouldn't go quite *that* extreme.\n\nRemember, we come from the days when it was hard to do allocations\nlarger than 64kB.   We have limits, dammit.\n\n\"256 bytes is enough for anybody\"\n\nReported-by: Joerg Scheurich <mufti11@web.de>\nSigned-off-by: Linus Torvalds <torvalds@linux-coundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2018-07-19T18:00:13Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/1cdcf9df88144049750116e36fe20c8c39fa2517"
+  }, {
+    "sha" : "5a28f14096c3f2e548cdf6bcfd008930e6a4e733",
+    "commit" : {
+      "message" : "Use _GNU_SOURCE instead of _BSD_SOURCE and _SYSV_SOURCE\n\nuemacs uses a lot of legacy stuff, which causes warnings with newer\ntoolchains.\n\nThis makes it build reasonably warning-free.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2018-07-19T17:55:19Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/5a28f14096c3f2e548cdf6bcfd008930e6a4e733"
+  }, {
+    "sha" : "9be85a9b60677acc8f8c6da048a0c08e67e172f8",
+    "commit" : {
+      "message" : "Do some valgrind cleanup\n\nJoerg Scheurich reported that there's a buffer overflow in readin() for\nlong path component names. He's not wrong.\n\nWhen fixing that, and then checking there's nothing else obviously wrong\nwith valgrind, I also noticed it complains about overlapping strcpy().\n\nSo add a hacky version of strscpy(), which (a) handles overlapping, and\n(b) has the proper strscpy() semantics.\n\nJust say no to strncpy and strlcpy, both of which are terminally broken\ninterfaces.\n\nAnd stop stripping the binary.  The time when the size of the uemacs\nbinary was a big deal is long past, and it made valgrind harder.\n\nReported-by: Joerg Scheurich <mufti11@web.de>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2018-07-19T17:44:44Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/9be85a9b60677acc8f8c6da048a0c08e67e172f8"
+  }, {
+    "sha" : "31a16c0ccab9a4b69c79920244b9c623bee7bffe",
+    "commit" : {
+      "message" : "Merge branch 'experimental'\n\nI'm not entirely happy with the new paragraph heuristics, but I've been\nusing them for a while and have grown used to them and have grown to\nrely on the behavior.  Since there probably aren't all that many other\npeople who use uemacs, let's just merge that behavior and see if anybody\nelse even notices.\n\nThe \"NBSP to SP on keyboard input\" is similarly convenient to me, and\nmight be offensive to others.  Let's see.\n\n* experimental:\n  Turn NBSP into regular SP on input\n  Try updated rule for \"is new paragraph\"\n  Make some minor code legibility changes",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2018-01-17T22:28:13Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/31a16c0ccab9a4b69c79920244b9c623bee7bffe"
+  }, {
+    "sha" : "59df78a7806764586e084eafd0842f43a741037a",
+    "commit" : {
+      "message" : "Turn NBSP into regular SP on input\n\nParticularly pasting from a web browser, I get a lot of 'space' +\n'non-breaking space' noise, and keeping the &nbsp as an actual unicode\ncharacter ends up being a major pain.\n\nNote: this is only done on input.  If the file contains the unicode\ncharacter U+00A0, we'll keep it that way.  But you can't enter it from\nthe keyboard (or cut-and-paste, which ends up looking like keyboard\ninput).\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2017-03-18T01:23:04Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/59df78a7806764586e084eafd0842f43a741037a"
+  }, {
+    "sha" : "34faa14e34c3eb2dfe3fd2cad02826f12f00ec5b",
+    "commit" : {
+      "message" : "Try updated rule for \"is new paragraph\"\n\nThis makes non-alphabetic characters at the beginning be a mark of a\nparagraph.  That's probably bogus, but let's try how it works.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2016-10-02T23:07:57Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/34faa14e34c3eb2dfe3fd2cad02826f12f00ec5b"
+  }, {
+    "sha" : "d861ad1bd06f20f505c99314c8d9004d13cb6625",
+    "commit" : {
+      "message" : "Make some minor code legibility changes\n\nI'm going to play around with the whole \"paragraph ends here\" logic, but\nthe way it used to be written made that hard.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2016-10-02T19:41:51Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/d861ad1bd06f20f505c99314c8d9004d13cb6625"
+  }, {
+    "sha" : "8841922689769960fa074fbb053cb8507f2f3ed9",
+    "commit" : {
+      "message" : "Don't use 'char' for number of lines\n\nHeh.  My new UHD monitor makes it easy to have more than 127 lines of\ntext.  I guess the 'char' could be an unsigned char, but quite frankly,\ntrying to save a couple of bytes per open editor window seems a bit\nexcessive these days.  So just make it 'int'.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2014-12-08T22:53:04Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/8841922689769960fa074fbb053cb8507f2f3ed9"
+  }, {
+    "sha" : "fa00fe882f719351fdf7a4c4100baf4f3eab4d61",
+    "commit" : {
+      "message" : "Stop using 'short' for line and allocation sizes\n\nYes, yes, it probably made sense 30 years ago as a way to save a tiny\namount of memory, but especially when interspersed in structures that\nhave pointers (aligned to 64 bits these days), it's not even saving\nmemory today.  And it makes us fail in nasty ways when looking at files\nwith long lines.\n\nSo just make them 'int'.  And if you have a line that is longer than\n2GB, you only have yourself to blame.  I no longer care.\n\nIn case anybody care, the \"test-case\" for this was a lovely UDDF file\nwith a binary divecomputer dump encoded as an XML element.  Resulting in\na lovely 41kB single line.  Not what poor micro-emacs was designed for,\nI'm afraid.\n\nI really should just learn another editor, rather than continue to\npolish this turd.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2013-02-22T22:32:16Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/fa00fe882f719351fdf7a4c4100baf4f3eab4d61"
+  }, {
+    "sha" : "25f0141df133f3522c6d23ddd96ae341813b9638",
+    "commit" : {
+      "message" : "Avoid memory access errors if llength() overflows\n\nllength() is currently a 'short' which can overflow and result in signed\nnumbers if line lengths are larger than 32k.  We'll fix the overflow\nseparately, but before we do that, just use a signed int to hold the\nvalue so that we don't overrun memory allocations when we converted that\nnegative number to a large positive unsigned integer.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2013-02-22T22:29:43Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/25f0141df133f3522c6d23ddd96ae341813b9638"
+  }, {
+    "sha" : "8899ed4e1f076d6f3c400731992210513bb629d3",
+    "commit" : {
+      "message" : "Fix the unicode character limit (0 .. 0x10ffff)\n\nFor some reason I had limited things to 0xffff, it really should be 0x10ffff.\n\nWe don't actually support a full 32-bit unicode model anyway, since we\nuse the high bits for the control/meta/^X/special bits, but there was no\nreason to limit things to 16 bits when we had 28 bits available.  And\nthe real limit for real Unicode characters is 0x10ffff.\n\nAdd a silly example character past the 16-bit range to the UTF8 demo\nfile:\n  'SMILING FACE WITH HALO' (U+1F607)\nfrom the 'emoticons' block.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-09-25T02:44:21Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/8899ed4e1f076d6f3c400731992210513bb629d3"
+  }, {
+    "sha" : "dbf1a014a7b038f59fbb1bea6f93b105f25ad3a0",
+    "commit" : {
+      "message" : "uemacs: Remove unused 'lflag' variables from file.c\n\nGCC spotted the following unused variable:\n\n    CC       file.o\n  file.c: In function ‘readin’:\n  file.c:225:6: warning: variable ‘lflag’ set but not used [-Wunused-but-set-variable]\n  file.c: In function ‘ifile’:\n  file.c:553:6: warning: variable ‘lflag’ set but not used [-Wunused-but-set-variable]\n\nSigned-off-by: Pekka Enberg <penberg@kernel.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Pekka Enberg",
+        "email" : "penberg@kernel.org",
+        "date" : "2012-08-15T06:27:21Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/dbf1a014a7b038f59fbb1bea6f93b105f25ad3a0"
+  }, {
+    "sha" : "ddd45dbff17f4fc30c66404331f6b8f0c05cdd82",
+    "commit" : {
+      "message" : "Fix 'getccol()' and 'getgoal()' functions for multibyte UTF-8 characters\n\nThese functions convert the byte offset into the column number\n(getccol()) and vice versa (getgoal()).\n\nGetting this right means that moving up and down the text gets us the\nright columns, rather than moving randomly left and right when you move\nup and down.  We also won't end up in the middle of a utf-8 character,\nbecause we're not just moving into some random byte offset, we're moving\ninto a proper column.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-15T21:36:38Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/ddd45dbff17f4fc30c66404331f6b8f0c05cdd82"
+  }, {
+    "sha" : "1edeced67c1cacefe83444e5fd403dab73529ebf",
+    "commit" : {
+      "message" : "Fix vtputc() and simplify show_line by using it again\n\nThis re-introduces vtputc() as the way to show characters, which\nreinstates the control character handing, and simplifies show_line() in\nthe process.\n\nvtputc now takes an \"int\" that is either a unicode character or a signed\nchar (so negative values in the range [-1, -128] are considered to be\nthe same as [128, 255]).  This allows us to use it regardless of what\nthe source of data is.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T18:23:32Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/1edeced67c1cacefe83444e5fd403dab73529ebf"
+  }, {
+    "sha" : "0a8b429059b47bca13307967ff0dabf0b79fb1d5",
+    "commit" : {
+      "message" : "Start doing character removal properly\n\nThis makes actual basic editing work.  Including things like\njustify-paragraph etc, so lines get justified by number of UTF8\ncharacters rather than bytes.\n\nThere are probably tons of broken stuff left, but this actually seems to\nget the basics working right.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T17:43:16Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/0a8b429059b47bca13307967ff0dabf0b79fb1d5"
+  }, {
+    "sha" : "0e9fc2be15b0926dfee08846c906cd3b2668878a",
+    "commit" : {
+      "message" : "Start actually inserting full utf8 sequences\n\nThis makes it possible to cut-and-paste the UTF8 testfile into a new\nbuffer, and the end result looks correct.\n\nNOTE! We still do various things wrong while editing.  For example,\nwhile the cursor movements were fixed, simple things like deleting a\ncharacter still work on single bytes, rather than utf8 characters.\n\nSo while this is getting much closer to actually editing UTF-8 data,\nit's not there yet.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T09:21:36Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/0e9fc2be15b0926dfee08846c906cd3b2668878a"
+  }, {
+    "sha" : "4bccfab6324c8c8bc8106e65c4aec076f5d121be",
+    "commit" : {
+      "message" : "Make 'show_line()' do proper TAB handling\n\nThe TAB handling got broken by commit cee00b0efb86 (\"Show UTF-8 input as\nUTF-8 output\") when it stopped doing things one byte at a time.\n\nI'm sure the other special character cases are broken too.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T08:22:32Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/4bccfab6324c8c8bc8106e65c4aec076f5d121be"
+  }, {
+    "sha" : "42d9cb33a555d113897b5decb29c099b4d47a164",
+    "commit" : {
+      "message" : "Expand keycode to 'int' from 'short'\n\nThis uses the four high bits for the meta and control key sequences.\nThis means that we will be limiting our Unicode space to 28 bits, but\nthat's more than we really need.\n\nIt *would* be nicer if we just used the sign bit to mark \"we have meta\ncharacter information\") but that would require bigger changes.  And we\nreally don't need to worry about 30-bit unicode.  Small steps, remember.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T01:14:02Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/42d9cb33a555d113897b5decb29c099b4d47a164"
+  }, {
+    "sha" : "6e4a45c0050ed8eacdd2426b971e263cbdcca0ae",
+    "commit" : {
+      "message" : "character input: make sure we have enough bytes for a full utf8 character\n\n.. but we do have that 0.1s delay, so if somebody feeds us non-utf8\nsequences, we won't delay forever.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T01:11:30Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/6e4a45c0050ed8eacdd2426b971e263cbdcca0ae"
+  }, {
+    "sha" : "3abd3dba424450401ca0bb34c043d0331f1c1abe",
+    "commit" : {
+      "message" : "utf8: make sure to honor the array length properly\n\nRight now the input side can give partial utf8 input, and that showed\nthat we didn't properly handle that case.\n\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>",
+      "author" : {
+        "name" : "Linus Torvalds",
+        "email" : "torvalds@linux-foundation.org",
+        "date" : "2012-07-11T00:56:53Z"
+      }
+    },
+    "html_url" : "https://github.com/torvalds/uemacs/commit/3abd3dba424450401ca0bb34c043d0331f1c1abe"
+  } ]
+} ]
